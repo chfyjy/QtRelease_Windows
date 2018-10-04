@@ -6,6 +6,8 @@
 
 QT       += core gui
 
+LIBS += -lpsapi
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = QtRelease
@@ -25,10 +27,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        widget.cpp
+        widget.cpp \
+    common.cpp
 
 HEADERS += \
-        widget.h
+        widget.h \
+    common.h
 
 FORMS += \
         widget.ui
+
+RESOURCES += \
+    icon.qrc
