@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui xml
 
 LIBS += -lpsapi
 
@@ -27,12 +27,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        widget.cpp \
-    common.cpp
+        widget.cpp
 
 HEADERS += \
-        widget.h \
-    common.h
+        widget.h
 
 FORMS += \
         widget.ui

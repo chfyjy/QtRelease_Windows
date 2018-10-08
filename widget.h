@@ -1,7 +1,6 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
-#include "common.h"
 
 
 #include <QWidget>
@@ -11,6 +10,21 @@
 #include <QLayout>
 #include <QIcon>
 #include <QPixmap>
+#include <QMessageBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QDir>
+#include <QString>
+#include <QDebug>
+#include <QMap>
+#include <QCheckBox>
+#include <QStandardItemModel>
+#include <QListView>
+
+
+#include <Windows.h>
+#include <tlhelp32.h>// for CreateToolhelp32Snapshot
+#include <Psapi.h>   // for GetModuleFileNameEx
 
 
 namespace Ui {
@@ -25,15 +39,26 @@ public:
     explicit Widget(QWidget *parent = 0);
     ~Widget();
 private slots:
-    void openbtnClicked();
+    void analyzeClicked();
+    void startCopyClicked();
+    void qtcboxChecked(bool checked);
+    void windowscboxChecked(bool checked);
+    void thirdcboxChecked(bool checked);
 
 private:
-    void initControls();
+    void initControls(void);
+    void initLibView(void);
+    void getPeDependDllInfo(const QString& aimexeName);
 
 
     Ui::Widget *ui;
-    QPushButton *openbtn;
-    QLineEdit *propath, *libsourcedir;
+    QLineEdit *exenameEdit, *viewEdit;
+    QPushButton *analyze, *startCopy;
+    QCheckBox *qtcbox, *windowscbox, *thirdcbox;
+    QListView *qtlibview,*winlibview,*thirdlibview;
+    QStandardItemModel *qtlibviewmodel,*winlibviewmodel,*thirdlibviewmodel;
+    QMap<QString,QString> QtLibraryMap, WinLibraryMap, thirdLibraryMap;
+    QStringList libneed, libneeddir;
 };
 
 #endif // WIDGET_H
