@@ -20,6 +20,9 @@
 #include <QCheckBox>
 #include <QStandardItemModel>
 #include <QListView>
+#include <QThreadPool>
+#include <QThread>
+#include <QRunnable>
 
 
 #include <Windows.h>
@@ -30,6 +33,30 @@
 namespace Ui {
 class Widget;
 }
+class CopyTask : public QObject, public QRunnable
+{
+    Q_OBJECT
+
+public:
+    CopyTask(QString a, QString b)
+    {
+        oldfilename = a;
+        newfilename = b;
+    }
+    ~CopyTask()
+    {}
+protected:
+    void run()
+    {
+        QFile::copy(oldfilename,newfilename);
+    }
+
+signals:
+private:
+    QString oldfilename,newfilename;
+};
+
+
 
 class Widget : public QWidget
 {
@@ -41,9 +68,7 @@ public:
 private slots:
     void analyzeClicked();
     void startCopyClicked();
-    void qtcboxChecked(bool checked);
-    void windowscboxChecked(bool checked);
-    void thirdcboxChecked(bool checked);
+    void qtcboxToggled(bool toggled);
 
 private:
     void initControls(void);
@@ -52,12 +77,14 @@ private:
 
 
     Ui::Widget *ui;
+    QThreadPool *copytPool;
+    CopyTask *runcopy;
     QLineEdit *exenameEdit, *viewEdit;
     QPushButton *analyze, *startCopy;
-    QCheckBox *qtcbox, *windowscbox, *thirdcbox;
-    QListView *qtlibview,*winlibview,*thirdlibview;
-    QStandardItemModel *qtlibviewmodel,*winlibviewmodel,*thirdlibviewmodel;
-    QMap<QString,QString> QtLibraryMap, WinLibraryMap, thirdLibraryMap;
+    QCheckBox *qtcbox;
+    QListView *qtlibview;
+    QStandardItemModel *qtlibviewmodel;
+    QMap<QString,QString> QtLibraryMap;
     QStringList libneed, libneeddir;
 };
 

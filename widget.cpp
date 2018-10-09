@@ -1,7 +1,6 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-//QtRelease.exe
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
@@ -9,6 +8,9 @@ Widget::Widget(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("QtRelease");
     initControls();
+    copytPool = new QThreadPool(this);
+    copytPool->setMaxThreadCount(5);
+
 }
 
 Widget::~Widget()
@@ -17,37 +19,20 @@ Widget::~Widget()
 }
 
 
-void Widget::qtcboxChecked(bool checked)
+void Widget::qtcboxToggled(bool toggled)
 {
-    for(int i = 0; i < qtlibviewmodel->rowCount(); i++)
+    if(toggled)
     {
-        if(checked)
+        for(int i = 0; i < qtlibviewmodel->rowCount(); i++)
             qtlibviewmodel->item(i)->setCheckState(Qt::Checked);
-        else
+    }
+    else
+    {
+        for(int i = 0; i < qtlibviewmodel->rowCount(); i++)
             qtlibviewmodel->item(i)->setCheckState(Qt::Unchecked);
+    }
+}
 
-    }
-}
-void Widget::windowscboxChecked(bool checked)
-{
-    for(int i = 0; i < winlibviewmodel->rowCount(); i++)
-    {
-        if(checked)
-            winlibviewmodel->item(i)->setCheckState(Qt::Checked);
-        else
-            winlibviewmodel->item(i)->setCheckState(Qt::Unchecked);
-    }
-}
-void Widget::thirdcboxChecked(bool checked)
-{
-    for(int i = 0; i < thirdlibviewmodel->rowCount(); i++)
-    {
-        if(checked)
-            thirdlibviewmodel->item(i)->setCheckState(Qt::Checked);
-        else
-            thirdlibviewmodel->item(i)->setCheckState(Qt::Unchecked);
-    }
-}
 void Widget::analyzeClicked()
 {
     exenameEdit->setDisabled(true);
@@ -57,10 +42,8 @@ void Widget::analyzeClicked()
         return;
     }
     QtLibraryMap.clear();
-    WinLibraryMap.clear();
-    thirdLibraryMap.clear();
     getPeDependDllInfo(exenameEdit->text());
-    if(QtLibraryMap.isEmpty() || WinLibraryMap.isEmpty() || thirdLibraryMap.isEmpty())
+    if(QtLibraryMap.isEmpty())
     {
         QMessageBox::information(this, "Tip", exenameEdit->text() + "是否已经运行");
         exenameEdit->setEnabled(true);
@@ -87,21 +70,15 @@ void Widget::startCopyClicked()
     QMap<QString, QString>::iterator it;
     if(qtcbox->isChecked())
     {
+        qDebug() << "Start Copy";
         for(it = QtLibraryMap.begin(); it != QtLibraryMap.end(); it++)
         {
-            qDebug() << QFile::copy(it.key(), it.value()) << it.value();
+            copytPool->start(new CopyTask(it.key(), it.value()));
+            //qDebug() << QFile::copy(it.key(), it.value()) << it.value();
             //qDebug() << it.value();
         }
-    }
-    if(windowscbox->isChecked())
-    {
-        for(it = WinLibraryMap.begin(); it != WinLibraryMap.end(); it++)
-           QFile::copy(it.key(), it.value());
-    }
-    if(thirdcbox->isChecked())
-    {
-        for(it = thirdLibraryMap.begin(); it != thirdLibraryMap.end(); it++)
-           QFile::copy(it.key(), it.value());
+        copytPool->waitForDone();
+        qDebug() << " Copy Done";
     }
 
     analyze->setDisabled(false);
@@ -120,18 +97,6 @@ void Widget::initLibView(void)
         qtlibviewmodel->appendRow(item);
     }
     qtcbox->setCheckState(Qt::Checked);
-    winlibviewmodel->clear();
-    for(it = WinLibraryMap.begin(); it != WinLibraryMap.end(); it++)
-    {
-        QStandardItem* item = new QStandardItem(it.key());
-        winlibviewmodel->appendRow(item);
-    }
-    thirdlibviewmodel->clear();
-    for(it = thirdLibraryMap.begin(); it != thirdLibraryMap.end(); it++)
-    {
-        QStandardItem* item = new QStandardItem(it.key());
-        thirdlibviewmodel->appendRow(item);
-    }
 }
 void Widget::initControls()
 {
@@ -139,7 +104,7 @@ void Widget::initControls()
     exenamel->setText("EXE Name");
     exenameEdit = new QLineEdit(this);
     analyze = new QPushButton(this);
-    analyze->setText("获取dll信息");
+    analyze->setText("获取Qt相关dll信息");
     connect(analyze, SIGNAL(clicked()), this, SLOT(analyzeClicked()));
     startCopy = new QPushButton(this);
     startCopy->setText("拷贝");
@@ -151,52 +116,25 @@ void Widget::initControls()
     exeNamelayout->addWidget(startCopy);
 
     qtcbox = new QCheckBox(this);
-    qtcbox->setText("Qt库");
-    connect(qtcbox, SIGNAL(toggled(bool)),this, SLOT(qtcboxChecked(bool)));
-    windowscbox = new QCheckBox(this);
-    windowscbox->setText("Windows库");
-    connect(windowscbox, SIGNAL(toggled(bool)), this, SLOT(windowscboxChecked(bool)));
-    thirdcbox = new QCheckBox(this);
-    thirdcbox->setText("未知来源库");
-    connect(thirdcbox, SIGNAL(toggled(bool)),this, SLOT(thirdcboxChecked(bool)));
+    qtcbox->setText("全选");
+    connect(qtcbox, SIGNAL(toggled(bool)), this, SLOT(qtcboxToggled(bool)));
     QHBoxLayout *cboxLayout = new QHBoxLayout();
-    cboxLayout->addWidget(windowscbox);
     cboxLayout->addWidget(qtcbox);
-    cboxLayout->addWidget(thirdcbox);
 
     qtlibview = new QListView(this);
     qtlibviewmodel = new QStandardItemModel(this);
     qtlibview->setModel(qtlibviewmodel);
     qtlibview->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    qtlibview->setDisabled(true);
 
-
-    winlibview = new QListView(this);
-    winlibviewmodel = new QStandardItemModel(this);
-    winlibview->setModel(winlibviewmodel);
-    winlibview->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    winlibview->setDisabled(true);
-
-    thirdlibview = new QListView(this);
-    thirdlibviewmodel = new QStandardItemModel(this);
-    thirdlibview->setModel(thirdlibviewmodel);
-    thirdlibview->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    thirdlibview->setDisabled(true);
 
     QVBoxLayout *viewLayout = new QVBoxLayout();
     viewLayout->addWidget(qtlibview);
-    viewLayout->addWidget(winlibview);
-    viewLayout->addWidget(thirdlibview);
-    viewLayout->setStretchFactor(qtlibview, 7);
-    viewLayout->setStretchFactor(winlibview, 2);
-    viewLayout->setStretchFactor(thirdlibview, 1);
 
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addLayout(exeNamelayout);
     layout->addLayout(cboxLayout);
     layout->addLayout(viewLayout);
-    //layout->setStretchFactor(libpathlayout, 1);
     setLayout(layout);
     setGeometry(100,100,400, 300);
 }
@@ -278,11 +216,6 @@ void Widget::getPeDependDllInfo(const QString& aimexeName)
                         else
                             QtLibraryMap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
                     }
-
-                    else if(tmpdllPath.contains("windows"))
-                        WinLibraryMap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
-                    else
-                        thirdLibraryMap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
 
                     bRet = ::Module32Next(hModuleSnap, &lpme);
                 }
