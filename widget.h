@@ -38,7 +38,7 @@ class CopyTask : public QObject, public QRunnable
     Q_OBJECT
 
 public:
-    CopyTask(QString a, QString b)
+    CopyTask(const QString& a, const QString& b)
     {
         oldfilename = a;
         newfilename = b;
@@ -74,6 +74,9 @@ private:
     void initControls(void);
     void initLibView(void);
     void getPeDependDllInfo(const QString& aimexeName);
+    QString getCopyName(const QString& sourcename);
+    void getNeedLibList(void);
+    void createNeededDir(void);
 
 
     Ui::Widget *ui;
@@ -84,8 +87,9 @@ private:
     QCheckBox *qtcbox;
     QListView *qtlibview;
     QStandardItemModel *qtlibviewmodel;
-    QMap<QString,QString> QtLibraryMap;
+    QMap<QString,QString> qtlibrarymap, winlibrarymap, thirdlibrarymap;
     QStringList libneed, libneeddir;
+    QLabel *infol;
 };
 
 #endif // WIDGET_H
