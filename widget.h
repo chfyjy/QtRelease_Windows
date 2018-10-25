@@ -23,6 +23,7 @@
 #include <QThreadPool>
 #include <QThread>
 #include <QRunnable>
+#include <QApplication>
 
 
 #include <Windows.h>
@@ -48,7 +49,9 @@ public:
 protected:
     void run()
     {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
         QFile::copy(oldfilename,newfilename);
+        QApplication::restoreOverrideCursor();
     }
 
 signals:

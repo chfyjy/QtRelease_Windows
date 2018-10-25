@@ -90,19 +90,18 @@ void Widget::startCopyClicked()
     createNeededDir();
     getNeedLibList();
 
-    infol->setText("开始复制");
-    setDisabled(true);
 
+    infol->setText("开始复制");
+    //setDisabled(true);
     QString tmp;
     for(int i = 0; i < libneed.count(); i++)
     {
         tmp = libneed.at(i);
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
     }
-
     copytPool->waitForDone();
     infol->setText("复制完成");
-    setDisabled(false);
+    //setDisabled(false);
 }
 void Widget::initLibView(void)
 {
