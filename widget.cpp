@@ -7,6 +7,7 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowTitle("QtRelease");
+    setGeometry(100, 100, 800, 600);
     initControls();
     copytPool = new QThreadPool(this);
     copytPool->setMaxThreadCount(5);
@@ -38,6 +39,7 @@ void Widget::analyzeClicked()
     if(exenameEdit->text() == "")
     {
         QMessageBox::information(this, "Tip", "请输入exe名字，并确保运行");
+        exenameEdit->setDisabled(false);
         return;
     }
     qtlibrarymap.clear();
@@ -98,9 +100,11 @@ void Widget::startCopyClicked()
     {
         tmp = libneed.at(i);
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
+        QCoreApplication::processEvents(QEventLoop::AllEvents,100);
     }
     copytPool->waitForDone();
     infol->setText("复制完成");
+    exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtWindeploy.git");
     //setDisabled(false);
 }
 void Widget::initLibView(void)
@@ -136,6 +140,7 @@ void Widget::initControls()
     analyze->setText("获取dll信息");
     connect(analyze, SIGNAL(clicked()), this, SLOT(analyzeClicked()));
     startCopy = new QPushButton(this);
+    startCopy->setMaximumWidth(40);
     startCopy->setText("拷贝");
     connect(startCopy, SIGNAL(clicked()), this, SLOT(startCopyClicked()));
     QHBoxLayout *exeNamelayout = new QHBoxLayout();

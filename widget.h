@@ -24,6 +24,7 @@
 #include <QThread>
 #include <QRunnable>
 #include <QApplication>
+#include <QEventLoop>
 
 
 #include <Windows.h>
@@ -49,9 +50,8 @@ public:
 protected:
     void run()
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
         QFile::copy(oldfilename,newfilename);
-        QApplication::restoreOverrideCursor();
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
     }
 
 signals:
