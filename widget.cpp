@@ -7,7 +7,8 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowTitle("QtRelease");
-    setGeometry(100, 100, 800, 600);
+    setMinimumWidth(600);
+    setMinimumHeight(450);
     initControls();
     copytPool = new QThreadPool(this);
     copytPool->setMaxThreadCount(5);
@@ -91,10 +92,7 @@ void Widget::startCopyClicked()
 {
     createNeededDir();
     getNeedLibList();
-
-
     infol->setText("开始复制");
-    //setDisabled(true);
     QString tmp;
     for(int i = 0; i < libneed.count(); i++)
     {
@@ -105,7 +103,6 @@ void Widget::startCopyClicked()
     copytPool->waitForDone();
     infol->setText("复制完成");
     exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtWindeploy.git");
-    //setDisabled(false);
 }
 void Widget::initLibView(void)
 {
