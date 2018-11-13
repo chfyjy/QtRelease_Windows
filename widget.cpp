@@ -98,7 +98,6 @@ void Widget::startCopyClicked()
     {
         tmp = libneed.at(i);
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
-        QCoreApplication::processEvents(QEventLoop::AllEvents,100);
     }
     copytPool->waitForDone();
     infol->setText("复制完成");
