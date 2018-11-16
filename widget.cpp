@@ -39,7 +39,7 @@ void Widget::analyzeClicked()
     exenameEdit->setDisabled(true);
     if(exenameEdit->text() == "")
     {
-        QMessageBox::information(this, "Tip", "请输入exe名字，并确保运行");
+        QMessageBox::information(this, "Tip", "Enter 'xxx.exe',and run it");
         exenameEdit->setDisabled(false);
         return;
     }
@@ -47,12 +47,12 @@ void Widget::analyzeClicked()
     getPeDependDllInfo(exenameEdit->text());
     if(qtlibrarymap.isEmpty())
     {
-        QMessageBox::information(this, "Tip", exenameEdit->text() + "是否已经运行");
+        QMessageBox::information(this, "Tip", exenameEdit->text() + "is running?");
         exenameEdit->setEnabled(true);
         return;
     }
     initLibView();
-    infol->setText("获取完成");
+    infol->setText("Geted");
     exenameEdit->setDisabled(false);
 }
 void Widget::getNeedLibList(void)
@@ -68,7 +68,7 @@ void Widget::getNeedLibList(void)
 }
 void  Widget::createNeededDir(void)
 {
-    infol->setText("开始创建所需的目录");
+    infol->setText("start create some dir for need");
     for(int i =0; i < libneeddir.count(); i++)
     {
         QDir dir(libneeddir.at(i));
@@ -77,7 +77,7 @@ void  Widget::createNeededDir(void)
         else
            dir.mkdir(libneeddir.at(i));
     }
-    infol->setText("所需的目录创建完成");
+    infol->setText("created dir");
 }
 QString Widget::getCopyName(const QString& sourcename)
 {
@@ -92,7 +92,7 @@ void Widget::startCopyClicked()
 {
     createNeededDir();
     getNeedLibList();
-    infol->setText("开始复制");
+    infol->setText("start copy");
     QString tmp;
     for(int i = 0; i < libneed.count(); i++)
     {
@@ -100,7 +100,7 @@ void Widget::startCopyClicked()
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
     }
     copytPool->waitForDone();
-    infol->setText("复制完成");
+    infol->setText("copy success");
     exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtWindeploy.git");
 }
 void Widget::initLibView(void)
@@ -130,14 +130,14 @@ void Widget::initLibView(void)
 void Widget::initControls()
 {
     QLabel *exenamel = new QLabel(this);
-    exenamel->setText("exe名称");
+    exenamel->setText("exe name");
     exenameEdit = new QLineEdit(this);
     analyze = new QPushButton(this);
-    analyze->setText("获取dll信息");
+    analyze->setText("get dll info");
     connect(analyze, SIGNAL(clicked()), this, SLOT(analyzeClicked()));
     startCopy = new QPushButton(this);
     startCopy->setMaximumWidth(40);
-    startCopy->setText("拷贝");
+    startCopy->setText("copy");
     connect(startCopy, SIGNAL(clicked()), this, SLOT(startCopyClicked()));
     QHBoxLayout *exeNamelayout = new QHBoxLayout();
     exeNamelayout->addWidget(exenamel);
@@ -146,7 +146,7 @@ void Widget::initControls()
     exeNamelayout->addWidget(startCopy);
 
     qtcbox = new QCheckBox(this);
-    qtcbox->setText("全选");
+    qtcbox->setText("select all");
     qtcbox->setMaximumWidth(50);
     qtcbox->setMinimumWidth(50);
     connect(qtcbox, SIGNAL(toggled(bool)), this, SLOT(qtcboxToggled(bool)));
