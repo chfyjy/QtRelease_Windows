@@ -7,12 +7,11 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowTitle("QtRelease");
-    setMinimumWidth(600);
-    setMinimumHeight(450);
+    setMinimumWidth(800);
+    setMinimumHeight(600);
     initControls();
     copytPool = new QThreadPool(this);
     copytPool->setMaxThreadCount(5);
-
 }
 
 Widget::~Widget()
@@ -36,18 +35,18 @@ void Widget::qtcboxToggled(bool toggled)
 void Widget::analyzeClicked()
 {
     infol->setText("");
-    exenameEdit->setDisabled(true);
+    exenameEdit->setEnabled(false);
     if(exenameEdit->text() == "")
     {
-        QMessageBox::information(this, "Tip", "Enter 'xxx.exe',and run it");
-        exenameEdit->setDisabled(false);
+        QMessageBox::information(this, "Tip", "Enter \"xxx.exe\" to lineedit, and run it(no full path)");
+        exenameEdit->setEnabled(true);
         return;
     }
     qtlibrarymap.clear();
     getPeDependDllInfo(exenameEdit->text());
     if(qtlibrarymap.isEmpty())
     {
-        QMessageBox::information(this, "Tip", exenameEdit->text() + "is running?");
+        QMessageBox::information(this, "Tip", "Enter \"xxx.exe\" to lineedit, and run it(no full path)");
         exenameEdit->setEnabled(true);
         return;
     }
@@ -90,6 +89,12 @@ QString Widget::getCopyName(const QString& sourcename)
 }
 void Widget::startCopyClicked()
 {
+    if(qtlibrarymap.isEmpty())
+    {
+        QMessageBox::information(this, "Tip", "Enter \"xxx.exe\" to lineedit, and run it(no full path)");
+        exenameEdit->setEnabled(true);
+        return;
+    }
     createNeededDir();
     getNeedLibList();
     infol->setText("start copy");
@@ -147,8 +152,8 @@ void Widget::initControls()
 
     qtcbox = new QCheckBox(this);
     qtcbox->setText("select all");
-    qtcbox->setMaximumWidth(50);
-    qtcbox->setMinimumWidth(50);
+    qtcbox->setMaximumWidth(150);
+    qtcbox->setMinimumWidth(150);
     connect(qtcbox, SIGNAL(toggled(bool)), this, SLOT(qtcboxToggled(bool)));
     QHBoxLayout *cboxLayout = new QHBoxLayout();
     infol = new QLabel(this);
