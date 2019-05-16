@@ -1,4 +1,4 @@
-视频教程：https://www.bilibili.com/video/av52111697/?p=2
+使用教程：https://www.bilibili.com/video/av52111697/?p=2
 一开始是想通过环境变量获取dll的目录，以及通过user文件或者pro文件得到需要的dll
 然后分析路径什么的
 但是发现在调试程序时常常会出现dll的绝对路径，于是查找这方面的资料
