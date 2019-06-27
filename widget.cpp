@@ -18,7 +18,23 @@ Widget::~Widget()
 {
     delete ui;
 }
-void Widget::qtcboxToggled(bool toggled)
+void Widget::keywordCboxToggled(bool toggled)
+{
+    if(toggled && keywordEdit->text().isEmpty())
+    {
+        QMessageBox::information(this, "Tip", "Enter 'keyword(like 'Qt')' to lineedit");
+        exenameEdit->setEnabled(true);
+        keywordCbox->setCheckState(Qt::Unchecked);
+        return;
+    }
+    initLibView();
+}
+
+void Widget::keywordEditingFinished()
+{
+    initLibView();
+}
+void Widget::allcboxToggled(bool toggled)
 {
     if(toggled)
     {
@@ -42,9 +58,9 @@ void Widget::analyzeClicked()
         exenameEdit->setEnabled(true);
         return;
     }
-    qtlibrarymap.clear();
+    librarymap.clear();
     getPeDependDllInfo(exenameEdit->text());
-    if(qtlibrarymap.isEmpty())
+    if(librarymap.isEmpty())
     {
         QMessageBox::information(this, "Tip", "Enter \"xxx.exe\" to lineedit, and run it(no full path)");
         exenameEdit->setEnabled(true);
@@ -80,16 +96,11 @@ void  Widget::createNeededDir(void)
 }
 QString Widget::getCopyName(const QString& sourcename)
 {
-    QString ret = qtlibrarymap[sourcename];
-    if(ret == "")
-        ret = winlibrarymap[sourcename];
-    if(ret == "")
-        ret = thirdlibrarymap[sourcename];
-    return ret;
+    return librarymap[sourcename];
 }
 void Widget::startCopyClicked()
 {
-    if(qtlibrarymap.isEmpty())
+    if(librarymap.isEmpty())
     {
         QMessageBox::information(this, "Tip", "Enter \"xxx.exe\" to lineedit, and run it(no full path)");
         exenameEdit->setEnabled(true);
@@ -104,31 +115,52 @@ void Widget::startCopyClicked()
         tmp = libneed.at(i);
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
     }
+    //copytPool->start(new CopyTask(exePath, getCopyName(releasedir+exeName)));
     copytPool->waitForDone();
     infol->setText("copy success");
-    exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtWindeploy.git");
+    exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtRelease_Windows");
+}
+QStringList Widget::keywordFirst()
+{
+    QStringList ret;
+    QString tmpup;
+    QString keywordup = keywordEdit->text().toUpper();
+    QMap<QString, QString>::iterator it;
+    for(it = librarymap.begin(); it != librarymap.end(); it++)
+    {
+        tmpup = it.key().toUpper();
+        if(tmpup.contains(keywordup))
+        {
+            ret << it.key();
+        }
+
+    }
+    for(it = librarymap.begin(); it != librarymap.end(); it++)
+    {
+        if(!ret.contains(it.key()))
+            ret << it.key();
+
+    }
+    return  ret;
 }
 void Widget::initLibView(void)
 {
-    QMap<QString, QString>::iterator it;
+    QString tmpup;
+    QString keywordup = keywordEdit->text().toUpper();
+    QStringList firstlist = keywordFirst();
     qtlibviewmodel->clear();
-    for(it = qtlibrarymap.begin(); it != qtlibrarymap.end(); it++)
+    foreach (QString tmp, firstlist)
     {
-        QStandardItem* item = new QStandardItem(it.key());
+        QStandardItem* item = new QStandardItem(tmp);
         item->setCheckable( true );
-        item->setCheckState(Qt::Checked);
-        qtlibviewmodel->appendRow(item);
-    }
-    for(it = thirdlibrarymap.begin(); it != thirdlibrarymap.end(); it++)
-    {
-        QStandardItem* item = new QStandardItem(it.key());
-        item->setCheckable( true );
-        qtlibviewmodel->appendRow(item);
-    }
-    for(it = winlibrarymap.begin(); it != winlibrarymap.end(); it++)
-    {
-        QStandardItem* item = new QStandardItem(it.key());
-        item->setCheckable( true );
+        tmpup = tmp.toUpper();
+        if(keywordCbox->isChecked())
+        {
+            if(tmpup.contains(keywordup))
+                item->setCheckState(Qt::Checked);
+            else
+                item->setCheckState(Qt::Unchecked);
+        }
         qtlibviewmodel->appendRow(item);
     }
 }
@@ -150,15 +182,25 @@ void Widget::initControls()
     exeNamelayout->addWidget(analyze);
     exeNamelayout->addWidget(startCopy);
 
-    qtcbox = new QCheckBox(this);
-    qtcbox->setText("select all");
-    qtcbox->setMaximumWidth(150);
-    qtcbox->setMinimumWidth(150);
-    connect(qtcbox, SIGNAL(toggled(bool)), this, SLOT(qtcboxToggled(bool)));
+    keywordCbox = new QCheckBox(this);
+    keywordCbox->setText("keyword first");
+    keywordCbox->setFixedWidth(150);
+    keywordCbox->setCheckState(Qt::Checked);
+    connect(keywordCbox, SIGNAL(toggled(bool)), this, SLOT(keywordCboxToggled(bool)));
+    keywordEdit = new QLineEdit(this);
+    keywordEdit->setText("qt");
+    keywordEdit->setFixedWidth(150);
+    connect(keywordEdit, SIGNAL(editingFinished()), this, SLOT(keywordEditingFinished()));
+    allcbox = new QCheckBox(this);
+    allcbox->setText("select all");
+    allcbox->setFixedWidth(150);
+    connect(allcbox, SIGNAL(toggled(bool)), this, SLOT(allcboxToggled(bool)));
     QHBoxLayout *cboxLayout = new QHBoxLayout();
     infol = new QLabel(this);
     infol->setText("");
-    cboxLayout->addWidget(qtcbox);
+    cboxLayout->addWidget(keywordCbox);
+    cboxLayout->addWidget(keywordEdit);
+    cboxLayout->addWidget(allcbox);
     cboxLayout->addWidget(infol);
 
     qtlibview = new QListView(this);
@@ -213,7 +255,7 @@ void Widget::getPeDependDllInfo(const QString& aimexeName)
     MODULEENTRY32 lpme;  //DLL结构
     lpme.dwSize = sizeof(MODULEENTRY32);//在使用这个结构前,先设置它的大小
     BOOL bRet = FALSE;
-    QString exeName, exePath, dllPath,tmpdllPath, exeDir;
+    QString  dllPath,tmpdllPath, exeDir;
     //遍历进程快照,显示每个进程的信息
     while(bMore)
     {
@@ -228,7 +270,10 @@ void Widget::getPeDependDllInfo(const QString& aimexeName)
             exePath = QString::fromStdWString(procPath).replace('\\','/');
             exePath.replace('\\','/');
             exeDir = GetEXEDir(exePath, exeName);
-            //qDebug() << exeDir;
+            releasedir = QString("%1%2/").arg(exeDir).arg("QtRelease");
+            if(!libneeddir.contains(releasedir))
+                libneeddir.append(releasedir);
+            //qDebug() << releasedir;
             //给一个已存在的进程内所有的DLL拍个快照
             hModuleSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe32.th32ProcessID);
             bRet = ::Module32First(hModuleSnap, &lpme);
@@ -237,6 +282,7 @@ void Widget::getPeDependDllInfo(const QString& aimexeName)
             else
                 return;
             //遍历DLL快照,显示该进程所加在的DLL信息
+            QString tmpdir;
             while(bRet)
             {
                 dllPath = QString::fromStdWString( lpme.szExePath);
@@ -244,26 +290,23 @@ void Widget::getPeDependDllInfo(const QString& aimexeName)
                 dllPath.replace('\\','/');
                 //qDebug() << dllPath;
                 tmpdllPath = dllPath.toLower();
-                if(tmpdllPath.contains("qt"))
+                if(tmpdllPath.contains("qt") && tmpdllPath.contains("plugins"))
                 {
-                    if(tmpdllPath.contains("plugins"))
+                    tmpdir = releasedir +GetPluginsDirName(dllPath);
+                    if(!libneeddir.contains(tmpdir))
                     {
-                        qtlibrarymap.insert(dllPath, exeDir + GetDLLName(dllPath, "/plugins/"));
-                        libneeddir.append(exeDir +GetPluginsDirName(dllPath));
+                        //qDebug() << tmpdir;
+                        libneeddir.append(tmpdir);
                     }
-                    else
-                        qtlibrarymap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
-                }
-                else if(tmpdllPath.contains("windows"))
-                {
-                    //qDebug() << dllPath << exeDir + GetDLLName(dllPath, "/");
-                    winlibrarymap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
+                    librarymap.insert(dllPath, releasedir + GetDLLName(dllPath, "/plugins/"));
+                    //qDebug() << dllPath << releasedir + GetDLLName(dllPath, "/plugins/");
                 }
                 else
                 {
-                    //qDebug() << dllPath << exeDir + GetDLLName(dllPath, "/");
-                    thirdlibrarymap.insert(dllPath, exeDir + GetDLLName(dllPath, "/"));
+                    librarymap.insert(dllPath, releasedir + GetDLLName(dllPath, "/"));
+                    //qDebug() << dllPath << releasedir + GetDLLName(dllPath, "/");
                 }
+
                 bRet = ::Module32Next(hModuleSnap, &lpme);
             }
             //关闭snapshot对象

@@ -71,7 +71,9 @@ public:
 private slots:
     void analyzeClicked();
     void startCopyClicked();
-    void qtcboxToggled(bool toggled);
+    void allcboxToggled(bool toggled);
+    void keywordCboxToggled(bool toggled);
+    void keywordEditingFinished();
 
 private:
     void initControls(void);
@@ -80,17 +82,19 @@ private:
     QString getCopyName(const QString& sourcename);
     void getNeedLibList(void);
     void createNeededDir(void);
+    QStringList keywordFirst(void);
 
 
     Ui::Widget *ui;
     QThreadPool *copytPool;
     CopyTask *runcopy;
-    QLineEdit *exenameEdit, *viewEdit;
+    QLineEdit *exenameEdit, *viewEdit, *keywordEdit;
     QPushButton *analyze, *startCopy;
-    QCheckBox *qtcbox;
+    QCheckBox *allcbox, *keywordCbox;
     QListView *qtlibview;
     QStandardItemModel *qtlibviewmodel;
-    QMap<QString,QString> qtlibrarymap, winlibrarymap, thirdlibrarymap;
+    QMap<QString,QString> librarymap;
+    QString exeName, exePath, releasedir;
     QStringList libneed, libneeddir;
     QLabel *infol;
 };
