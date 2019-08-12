@@ -116,6 +116,8 @@ void Widget::startCopyClicked()
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
     }
     //copytPool->start(new CopyTask(exePath, getCopyName(releasedir+exeName)));
+    QFile exeFile(exePath);
+    exeFile.copy(releasedir+exeName);
     copytPool->waitForDone();
     infol->setText("copy success");
     exenameEdit->setText("Give me a star at https://github.com/chfyjy/QtRelease_Windows");
