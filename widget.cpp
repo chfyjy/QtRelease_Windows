@@ -115,7 +115,6 @@ void Widget::startCopyClicked()
         tmp = libneed.at(i);
         copytPool->start(new CopyTask(tmp, getCopyName(tmp)));
     }
-    //copytPool->start(new CopyTask(exePath, getCopyName(releasedir+exeName)));
     QFile exeFile(exePath);
     exeFile.copy(releasedir+exeName);
     copytPool->waitForDone();
